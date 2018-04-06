@@ -8,42 +8,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-public class Reader {
+public class TestReader {
 
-	public static EcgData ecgInp = new EcgData();
+	public static EcgData ecgInpTest = new EcgData();
 	EcgData.Time sec = EcgData.Time.SECONDS;
 	EcgData.Value valMV = EcgData.Value.MILIVOLTS;
 	static public int change1 = 0;
-	static double[] timeArray;
-	static double[] valueArray;
+	static double[] timeArrayTest;
+	static double[] valueArrayTest;
 
 	public double[] getX() {
-		return timeArray;
+		return timeArrayTest;
 	}
 
 	public double[] getY() {
-		return valueArray;
-	}
-
-	// ---------- WYŒWIETLANIE_PLIKU_TEKSTOWEGO_KONSOLA ----------
-	public void read(String fileName) throws IOException {
-		int i;
-		FileInputStream fin = null;
-
-		{
-			try {
-				fin = new FileInputStream(fileName);
-			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			do {
-				i = fin.read();
-				if (i != -1)
-					System.out.print((char) i);
-			} while (i != -1);
-			fin.close();
-		}
+		return valueArrayTest;
 	}
 
 	// ---------- CZYTANIE_PLIKU_TEKSTOWEGO ----------
@@ -71,18 +50,18 @@ public class Reader {
 							int num1 = time.indexOf(')');
 							String a1 = time.substring(1, num1);
 							if (a1.equals("seconds")) {
-								ecgInp.setT(sec);
+								ecgInpTest.setT(sec);
 							} else if ((a1.equals("mV"))) {
-								ecgInp.setV(valMV);
+								ecgInpTest.setV(valMV);
 							}
 						}
 						if (value.charAt(0) == 40) {
 							int num1 = value.indexOf(')');
 							String a1 = value.substring(1, num1);
 							if (a1.equals("seconds")) {
-								ecgInp.setT(sec);
+								ecgInpTest.setT(sec);
 							} else if ((a1.equals("mV")))
-								ecgInp.setV(valMV);
+								ecgInpTest.setV(valMV);
 						}
 
 					} else {
@@ -95,21 +74,21 @@ public class Reader {
 		}
 		EcgVisualizationSystem.unitFlag(change1);
 		fr.close();
-		timeArray = new double[timeEcg.size()];
-		for (int k = 0; k < timeArray.length; k++) {
-			timeArray[k] = timeEcg.get(k);
+		timeArrayTest = new double[timeEcg.size()];
+		for (int k = 0; k < timeArrayTest.length; k++) {
+			timeArrayTest[k] = timeEcg.get(k);
 		}
-		valueArray = new double[valueEcg.size()];
-		for (int n = 0; n < valueArray.length; n++) {
-			valueArray[n] = valueEcg.get(n);
+		valueArrayTest = new double[valueEcg.size()];
+		for (int n = 0; n < valueArrayTest.length; n++) {
+			valueArrayTest[n] = valueEcg.get(n);
 		}
-		ecgInp.setTA(timeArray);
-		ecgInp.setVA(valueArray);
-		if (ecgInp.isT() == false) {
-			ecgInp.setT(sec);
+		ecgInpTest.setTA(timeArrayTest);
+		ecgInpTest.setVA(valueArrayTest);
+		if (ecgInpTest.isT() == false) {
+			ecgInpTest.setT(sec);
 		}
-		if (ecgInp.isV() == false) {
-			ecgInp.setV(valMV);
+		if (ecgInpTest.isV() == false) {
+			ecgInpTest.setV(valMV);
 		}
 	}
 
