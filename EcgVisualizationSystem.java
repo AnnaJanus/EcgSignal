@@ -35,7 +35,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 
 	static JFrame frame = new myFrame("ECG signal");
 
-	JScrollBar scroll = new JScrollBar(JScrollBar.HORIZONTAL, 0, 400, 0, 500);
+	JScrollBar scroll = new JScrollBar(JScrollBar.HORIZONTAL, 0, 40, 0, 500);
 	static ArrayList<EcgData> data = new ArrayList<EcgData>(); // include all existing datas without Ecg Input
 	JComboBox<String> spectrumList;
 
@@ -181,6 +181,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 		medianWindow.addItem(3);
 		medianWindow.addItem(5);
 		medianWindow.addItem(7);
+		medianWindow.setVisible(false);
 		medianF.add(medianL);
 		medianF.add(medianWindow);
 		averageL.setForeground(Color.blue);
@@ -453,23 +454,22 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 																										// value
 					double minInZoom = chart.getXYPlot().getDomainAxis().getRange().getLowerBound(); // minimum showed
 																										// value
-					double maxLength = findTheLongestArray(); // the length of the longest array
-					double maxValue = ecgProc.getElementOfTA(ecgProc.getTA().length-1); // get the maximum value of
-																						// ecgProc
-					double wielokszcOKna = maxInZoom - minInZoom;
+					double chartWindowWidth = maxInZoom - minInZoom;
 					
-					if(wielokszcOKna>ecgProc.getElementOfTA((ecgProc.getTA().length-1))) {
+					if(chartWindowWidth>ecgProc.getElementOfTA((ecgProc.getTA().length-1))) {
 						scroll.setVisibleAmount(500);
 					} else {
-						double wizibulAmaunt = wielokszcOKna * 500 / ecgProc.getElementOfTA((ecgProc.getTA().length-1));
-						scroll.setVisibleAmount((int) wizibulAmaunt);
+						double visibleAmount = chartWindowWidth * 500 / ecgProc.getElementOfTA((ecgProc.getTA().length-1));
+						scroll.setVisibleAmount((int) visibleAmount);
 					}
 							
 					System.out.println(maxInZoom);
 					System.out.println("max" + maxInZoom / ecgProc.getElementOfTA(1));
 					System.out.println("min" + minInZoom / ecgProc.getElementOfTA(1));
 				} catch (IndexOutOfBoundsException iofbe) {
-					System.out.println("ELO ELO");
+					System.out.println("index out of bounds");
+				} catch(NullPointerException npe) {
+					System.out.println("null pointer exception");
 				}
 			}
 
@@ -503,12 +503,14 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 		JMenuItem txt = new JMenuItem(".txt");
 		JMenuItem filterItem = new JMenuItem("Average Filter");
 		JMenuItem mfilterItem = new JMenuItem("Median Filter");
+		JMenuItem fftfilterItem = new JMenuItem("FFT Filter");
 		JMenuItem clear = new JMenuItem("Clear");
 		JMenuItem loadTest = new JMenuItem("Load test data");
 
 		load.add(txt);
 		analyze.add(filterItem);
 		analyze.add(mfilterItem);
+		analyze.add(fftfilterItem);
 		datamenu.add(clear);
 		test.add(loadTest);
 
@@ -517,6 +519,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 		txt.addActionListener(this);
 		filterItem.addActionListener(this);
 		mfilterItem.addActionListener(this);
+		fftfilterItem.addActionListener(this);
 
 	}
 
@@ -741,6 +744,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 				if (fileData != null) {
 					if (ecgAverage.getVA() == null) {
 						averageCheckbox.setState(true);
+						averageWindow.setVisible(true);
 						double[] filteredValueArray = averageFilter.filter(ecgProc.getTA(), ecgProc.getVA(), 3);
 						averageWindow.setVisible(true);
 						averageWindow.setSelectedItem(3);
@@ -760,6 +764,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 				if (fileData != null) {
 					if (ecgMedian.getVA() == null) {
 						medianCheckbox.setState(true);
+						medianWindow.setVisible(true);
 						ecgMedian.setTA(ecgProc.getTA());
 						ecgMedian.setVA(ecgProc.getVA());
 						double[] filteredValueArray = medianFilter.filter(ecgMedian.getTA(), ecgMedian.getVA(), 3);
@@ -836,6 +841,8 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 
 		// delete scroll and uncheck checkboxes
 		scroll.setVisible(false);
+		averageWindow.setVisible(false);
+		medianWindow.setVisible(false);
 		originalCheckbox.setState(false);
 		averageCheckbox.setState(false);
 		medianCheckbox.setState(false);
