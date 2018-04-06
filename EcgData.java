@@ -195,26 +195,25 @@ public class EcgData {
 		MILIVOLTS, VOLTS, NANOVOLTS
 	}
 
-	XYSeries updateSeries(int samples, int scrollPosition, int scrollMaxPosition) {
+	void updateSeries(int samples, int scrollPosition, int scrollMaxPosition) {
 		this.getXYSeries().clear();
 		int length = this.getTA().length;
-		int length2 = (scrollPosition * length) / scrollMaxPosition;
-		if (length2 < samples) {
-			length2 = length2 + (samples - length2);
+		int middlePoint = (scrollPosition * length) / scrollMaxPosition;
+		if (middlePoint < samples) {
+			middlePoint = middlePoint + (samples - middlePoint);
 		}
-		if (length2 > (length - samples)) {
-			length2 = length2 - (length2 - (length - samples));
+		if (middlePoint > (length - samples)) {
+			middlePoint = middlePoint - (middlePoint - (length - samples));
 		}
 		if (length < 1000) {
 			for (int i = 0; i < this.getTA().length; i++) {
-				this.getXYSeries().add(this.getElementOfTA(i), this.getElementOfVA(i));
+				xySeries.add(this.getElementOfTA(i), this.getElementOfVA(i));
 			}
 		} else {
-			for (int k = (length2 - samples); k < (length2 + samples); k++) {
-				this.getXYSeries().add(this.getElementOfTA(k), this.getElementOfVA(k));
+			for (int k = (middlePoint - samples); k < (middlePoint + samples); k++) {
+				xySeries.add(this.getElementOfTA(k), this.getElementOfVA(k));
 			}
 		}
-		return this.getXYSeries();
 	}
 
 }

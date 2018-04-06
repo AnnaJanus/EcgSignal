@@ -35,7 +35,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 
 	static JFrame frame = new myFrame("ECG signal");
 
-	JScrollBar scroll = new JScrollBar(JScrollBar.HORIZONTAL, 30, 40, 0, 500);
+	JScrollBar scroll = new JScrollBar(JScrollBar.HORIZONTAL, 0, 400, 0, 500);
 	static ArrayList<EcgData> data = new ArrayList<EcgData>(); // include all existing datas without Ecg Input
 	JComboBox<String> spectrumList;
 
@@ -173,6 +173,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 		averageWindow.addItem(3);
 		averageWindow.addItem(5);
 		averageWindow.addItem(7);
+		averageWindow.setVisible(false);
 		averageF.add(averageL);
 		averageF.add(averageWindow);
 		JLabel medianL = new JLabel("Window");
@@ -453,13 +454,22 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 					double minInZoom = chart.getXYPlot().getDomainAxis().getRange().getLowerBound(); // minimum showed
 																										// value
 					double maxLength = findTheLongestArray(); // the length of the longest array
-					double maxValue = ecgProc.getElementOfTA(ecgProc.getTA().length); // get the maximum value of
+					double maxValue = ecgProc.getElementOfTA(ecgProc.getTA().length-1); // get the maximum value of
 																						// ecgProc
+					double wielokszcOKna = maxInZoom - minInZoom;
+					
+					if(wielokszcOKna>ecgProc.getElementOfTA((ecgProc.getTA().length-1))) {
+						scroll.setVisibleAmount(500);
+					} else {
+						double wizibulAmaunt = wielokszcOKna * 500 / ecgProc.getElementOfTA((ecgProc.getTA().length-1));
+						scroll.setVisibleAmount((int) wizibulAmaunt);
+					}
+							
 					System.out.println(maxInZoom);
 					System.out.println("max" + maxInZoom / ecgProc.getElementOfTA(1));
 					System.out.println("min" + minInZoom / ecgProc.getElementOfTA(1));
 				} catch (IndexOutOfBoundsException iofbe) {
-
+					System.out.println("ELO ELO");
 				}
 			}
 
@@ -691,7 +701,6 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 	};
 
 	// ---------- SCROLL_LISTENER ----------
-	// (http://www.zentut.com/java-swing/jscrollbar/)----------
 	class MyAdjustmentListener implements AdjustmentListener {
 		public void adjustmentValueChanged(AdjustmentEvent e) {
 			scrollPosition = e.getValue();
@@ -732,11 +741,13 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 				if (fileData != null) {
 					if (ecgAverage.getVA() == null) {
 						averageCheckbox.setState(true);
-						ecgAverage.setTA(ecgProc.getTA());
-						ecgAverage.setVA(ecgProc.getVA());
-						double[] filteredValueArray = averageFilter.filter(ecgAverage.getTA(), ecgAverage.getVA(), 3);
+						double[] filteredValueArray = averageFilter.filter(ecgProc.getTA(), ecgProc.getVA(), 3);
+						averageWindow.setVisible(true);
 						averageWindow.setSelectedItem(3);
+						ecgAverage.setTA(ecgProc.getTA());
 						ecgAverage.setVA(filteredValueArray);
+						ecgAverage.setT(ecgProc.getT());
+						ecgAverage.setV(ecgProc.getV());
 						data.add(ecgAverage); // add filtered data to data array
 						ecgAverage.updateSeries(samples, scrollPosition, scrollMaxPosition);
 					} else {
@@ -754,6 +765,8 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 						double[] filteredValueArray = medianFilter.filter(ecgMedian.getTA(), ecgMedian.getVA(), 3);
 						medianWindow.setSelectedItem(3);
 						ecgMedian.setVA(filteredValueArray);
+						ecgMedian.setT(ecgProc.getT());
+						ecgMedian.setV(ecgProc.getV());
 						data.add(ecgMedian);
 						ecgMedian.updateSeries(samples, scrollPosition, scrollMaxPosition);
 					} else {
@@ -979,6 +992,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 		double error = sum / e.getTA().length;
 		return error;
 	}
+	
 
 	@Override
 	public void itemStateChanged(ItemEvent arg0) {
