@@ -14,13 +14,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartMouseEvent;
-import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.ValueAxis;
-import org.jfree.chart.event.ChartChangeEvent;
-import org.jfree.chart.event.ChartChangeListener;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYDataset;
@@ -146,9 +142,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 						n = findN(ecgFFT.getVA());
 						ecgFFT.setTA(makeArrayNlength(ecgFFT.getTA(), n));
 						ecgFFT.setVA(makeArrayNlength(ecgFFT.getVA(), n));
-						fftObject = new FFT(n);
-						fftObject.fft(ecgFFT.getVA());
-						fftObject.FFT2(ecgFFT.getTA());
+						fftObject = new FFT(n,ecgFFT.getVA(),ecgFFT.getTA());
 						ecgFFT.setTA(fftObject.getTime());
 						ecgFFT.setVA(fftObject.getValue());
 						// fftObject.deleteFrequency(50, 53, ecgFFT.getVA());
@@ -429,43 +423,35 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 		CP.setMinimumSize(new Dimension(300, 300));
 		CP.setMouseWheelEnabled(true);
 		container.add(CP, BorderLayout.CENTER);
-		CP.addChartMouseListener(new ChartMouseListener() {
-
-			@Override
-			public void chartMouseClicked(ChartMouseEvent event) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void chartMouseMoved(ChartMouseEvent event) {
-				// TODO Auto-generated method stub
-
-			}
-
-		});
+		
+		//CP.setDomainZoomable(false);
+		//CP.setRangeZoomable(false);
+		
+		/*
 		chart.addChangeListener(new ChartChangeListener() {
 
 			@Override
 			public void chartChanged(ChartChangeEvent event) {
 				// TODO Auto-generated method stub
 				try {
-					double maxInZoom = chart.getXYPlot().getDomainAxis().getRange().getUpperBound(); // maximum showed
-																										// value
-					double minInZoom = chart.getXYPlot().getDomainAxis().getRange().getLowerBound(); // minimum showed
-																										// value
+					double maxInZoom = chart.getXYPlot().getDomainAxis().getRange().getUpperBound(); // maximum showed time
+					double minInZoom = chart.getXYPlot().getDomainAxis().getRange().getLowerBound(); // minimum showed time
 					double chartWindowWidth = maxInZoom - minInZoom;
 					
-					if(chartWindowWidth>ecgProc.getElementOfTA((ecgProc.getTA().length-1))) {
+					int middlePoint = (scrollPosition * ecgProc.getTA().length) / scrollMaxPosition;
+					
+					
+					if(maxInZoom>ecgProc.getElementOfTA(middlePoint + samples)) {
+					//ecgProc.getElementOfTA((ecgProc.getTA().length-1))) {
 						scroll.setVisibleAmount(500);
 					} else {
 						double visibleAmount = chartWindowWidth * 500 / ecgProc.getElementOfTA((ecgProc.getTA().length-1));
 						scroll.setVisibleAmount((int) visibleAmount);
 					}
-							
-					System.out.println(maxInZoom);
-					System.out.println("max" + maxInZoom / ecgProc.getElementOfTA(1));
-					System.out.println("min" + minInZoom / ecgProc.getElementOfTA(1));
+					
+										
+					System.out.println("max" + maxInZoom );
+					System.out.println(ecgProc.getElementOfTA(middlePoint + samples));
 				} catch (IndexOutOfBoundsException iofbe) {
 					System.out.println("index out of bounds");
 				} catch(NullPointerException npe) {
@@ -473,7 +459,7 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 				}
 			}
 
-		});
+		});*/
 
 		setMenu();
 		frame.add(container);
@@ -746,13 +732,13 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 						averageCheckbox.setState(true);
 						averageWindow.setVisible(true);
 						double[] filteredValueArray = averageFilter.filter(ecgProc.getTA(), ecgProc.getVA(), 3);
-						averageWindow.setVisible(true);
-						averageWindow.setSelectedItem(3);
 						ecgAverage.setTA(ecgProc.getTA());
 						ecgAverage.setVA(filteredValueArray);
 						ecgAverage.setT(ecgProc.getT());
 						ecgAverage.setV(ecgProc.getV());
 						data.add(ecgAverage); // add filtered data to data array
+						averageWindow.setVisible(true);
+						averageWindow.setSelectedItem(3);
 						ecgAverage.updateSeries(samples, scrollPosition, scrollMaxPosition);
 					} else {
 						JOptionPane.showMessageDialog(null, "Signal has already been filtered");
@@ -764,15 +750,15 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 				if (fileData != null) {
 					if (ecgMedian.getVA() == null) {
 						medianCheckbox.setState(true);
-						medianWindow.setVisible(true);
 						ecgMedian.setTA(ecgProc.getTA());
 						ecgMedian.setVA(ecgProc.getVA());
 						double[] filteredValueArray = medianFilter.filter(ecgMedian.getTA(), ecgMedian.getVA(), 3);
-						medianWindow.setSelectedItem(3);
 						ecgMedian.setVA(filteredValueArray);
 						ecgMedian.setT(ecgProc.getT());
 						ecgMedian.setV(ecgProc.getV());
 						data.add(ecgMedian);
+						medianWindow.setVisible(true);
+						medianWindow.setSelectedItem(3);
 						ecgMedian.updateSeries(samples, scrollPosition, scrollMaxPosition);
 					} else {
 						JOptionPane.showMessageDialog(null, "Signal has already been filtered");
@@ -992,11 +978,11 @@ public class EcgVisualizationSystem extends JFrame implements ActionListener, It
 
 	private double comparisionAlgoritm(EcgData e) {
 		double sum = 0;
-		for (int k = 0; k < e.getTA().length; k++) {
-			double diff = e.getElementOfTA(k) - ecgTest.getElementOfTA(k);
+		for (int k = 0; k < e.getVA().length; k++) {
+			double diff = e.getElementOfVA(k) - ecgTest.getElementOfVA(k);
 			sum = sum + Math.pow(diff, 2);
 		}
-		double error = sum / e.getTA().length;
+		double error = sum / e.getVA().length;
 		return error;
 	}
 	

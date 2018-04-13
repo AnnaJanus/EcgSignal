@@ -2,8 +2,8 @@ package Inzynierka.Filters;
 
 public class FFT {
 
-	public double x[];
-	public double y[];
+	public double[] x;
+	public double[] y;
 	double[] f;
 	double[] spectrum1;
 
@@ -11,8 +11,21 @@ public class FFT {
 
 	// Lookup tables. Only need to recompute when size of FFT changes.
 	double[] cos;
-	double[] sin;
+
 	double[] window;
+
+	public FFT(int nInp, double[] xInp, double[] yInp) {
+		n = nInp;
+		x = new double[xInp.length];
+		y = new double[xInp.length];
+		for (int i = 0; i < xInp.length; i++) {
+			x[i] = xInp[i];
+			y[i] = 0; // x and y arrays are always the same length
+		}
+		m = (int) (Math.log(xInp.length) / Math.log(2));
+		FFT2(y);
+
+	}
 
 	public double[] getTime() {
 		return spectrum1;
@@ -22,63 +35,30 @@ public class FFT {
 		return f;
 	}
 
-	public FFT(int n) {
-		this.n = n;
-		this.m = (int) (Math.log(n) / Math.log(2));
+	// ***************************************************************/
+	// fft.c
+	// Douglas L. Jones
+	// University of Illinois at Urbana-Champaign
+	// January 19, 1992
+	//
+	// fft: in-place radix-2 DIT DFT of a complex input
+	//
+	// input:
+	// n: length of FFT: must be a power of two
+	// m: n = 2**m
+	// input/output
+	// x: double array of length n with real part of data
+	// y: double array of length n with imag part of data
+	//
+	// Permission to copy and use this program is granted
+	// as long as this header is included.
+	// ***************************************************************/
 
-		// Make sure n is a power of 2
-		if (n != (1 << m))
-			throw new RuntimeException("FFT length must be power of 2");
-
-		// precompute tables
-		cos = new double[n / 2];
-		sin = new double[n / 2];
-
-		// for(int i=0; i<n/4; i++) {
-		// cos[i] = Math.cos(-2*Math.PI*i/n);
-		// sin[n/4-i] = cos[i];
-		// cos[n/2-i] = -cos[i];
-		// sin[n/4+i] = cos[i];
-		// cos[n/2+i] = -cos[i];
-		// sin[n*3/4-i] = -cos[i];
-		// cos[n-i] = cos[i];
-		// sin[n*3/4+i] = -cos[i];
-		// }
-
-		for (int i = 0; i < n / 2; i++) {
-			cos[i] = Math.cos(-2 * Math.PI * i / n);
-			sin[i] = Math.sin(-2 * Math.PI * i / n);
-		}
-
-	}
-
-	/***************************************************************
-	 * fft.c Douglas L. Jones University of Illinois at Urbana-Champaign January 19,
-	 * 1992 http://cnx.rice.edu/content/m12016/latest/
-	 * 
-	 * fft: in-place radix-2 DIT DFT of a complex input
-	 * 
-	 * input: n: length of FFT: must be a power of two m: n = 2**m input/output x:
-	 * double array of length n with real part of data y: double array of length n
-	 * with imag part of data
-	 * 
-	 * Permission to copy and use this program is granted as long as this header is
-	 * included.
-	 ****************************************************************/
-	public void fft(double[] re) { // podaj wartoœci sygna³u
-
-		y = new double[re.length];
-
-		for (int l = 0; l == y.length; l++) {
-			y[l] = 0;
-		}
-		int i, j, k, n1, n2, a;
-		double c, s, t1, t2;
-		x = re;
-		// Bit-reverse
-		j = 0;
-		n2 = n / 2;
-		for (i = 1; i < n - 1; i++) {
+	private double[] fft() {
+		int j = 0; // bit-reverse
+		int n2 = n / 2;
+		int n1;
+		for (int i = 0; i < n - 2; i++) {
 			n1 = n2;
 			while (j >= n1) {
 				j = j - n1;
@@ -87,8 +67,9 @@ public class FFT {
 			j = j + n1;
 
 			if (i < j) {
-				t1 = x[i];
-				x[i] = x[j];
+				double t1;
+				t1 = x[i+1];
+				x[i+1] = x[j];
 				x[j] = t1;
 				t1 = y[i];
 				y[i] = y[j];
@@ -96,23 +77,22 @@ public class FFT {
 			}
 		}
 
-		// FFT
 		n1 = 0;
 		n2 = 1;
-
-		for (i = 0; i < m; i++) {
+		for (int i = 0; i <= (m - 1); i++) {
 			n1 = n2;
 			n2 = n2 + n2;
-			a = 0;
+			double e = -2 * Math.PI / n2;
+			double a = 0;
 
-			for (j = 0; j < n1; j++) {
-				c = cos[a];
-				s = sin[a];
-				a += 1 << (m - i - 1);
+			for (j = 0; j <= (n1 - 1); j++) {
+				double c = Math.cos(a);
+				double s = Math.sin(a);
+				a = a + e;
 
-				for (k = j; k < n; k = k + n2) {
-					t1 = c * x[k + n1] - s * y[k + n1];
-					t2 = s * x[k + n1] + c * y[k + n1];
+				for (int k = j; k <= (n - 1); k = k + n2) {
+					double t1 = c * x[k + n1] - s * y[k + n1];
+					double t2 = s * x[k + n1] + c * y[k + n1];
 					x[k + n1] = x[k] - t1;
 					y[k + n1] = y[k] - t2;
 					x[k] = x[k] + t1;
@@ -120,51 +100,64 @@ public class FFT {
 				}
 			}
 		}
+		return x;
 	}
+
 	// -------- mój kod: -----------------------------
 
 	public void FFT2(double[] time) { // podaj czas
-		System.out.print(x.length);
-		for (int i = 0; i < x.length; i++) {
-			System.out.println("x[i] " + x[i]);
-			i = i+1;
+
+		double fs = n; // sampling frequency
+		//System.out.println("fs" + fs);
+		double T = 1 / fs;
+		//System.out.println("T" + T);
+		int l = x.length;
+		//System.out.println("L" + l);
+		double[] t = new double[l];
+
+		for (int i = 0; i < t.length; i++) {
+			t[i]=i*T;
+		//	System.out.println("t" + t[i]);
 		}
 		
-		System.out.println("...........");
-		for (int i = 0; i < time.length; i++) {
-			System.out.println("time[i] " + time[i]);
+		for (int i = 0; i < x.length; i++) {
+			i = i + 1;
 		}
-		System.out.println("...........");
 
-		int length = x.length;
-		System.out.println("length " + length);
-		System.out.println("...........");
+		double[] spectrum2 = new double[l];
 
-		double[] spectrum2 = new double[length];
-
-		for (int i = 0; i < length; i++) {
-		spectrum2[i] = x[i] / Math.abs(length);
-		System.out.println("spectrum2 " + spectrum2[i]);
+		double[] Y = fft();
+		for (int i = 0; i < l; i++) {
+			spectrum2[i] = Math.abs(Y[i] / l);
 		}
-		System.out.println("...........");
-		spectrum1 = new double[length / 2];
-		for (int k = 0; k < length / 2; k++) {
+
+		spectrum1 = new double[l / 2 + 1];
+		for (int k = 0; k < spectrum1.length; k++) {
 			spectrum1[k] = spectrum2[k];
 		}
 		for (int i = 2; i < (spectrum1.length - i); i++) {
 			spectrum1[i] = 2 * spectrum1[i];
-			System.out.println("spectrum1 " + spectrum1[i]);
 		}
-		System.out.println("...........");
 
-		double fs = 1 * 10 / time[10]; // czêstotliwoœæ
-		System.out.println("fs " + fs);
-		System.out.println("...........");
+		f = new double[l / 2 + 1];
+		for (int m = 0; m < (l / 2) + 1; m++) {
+			f[m] = fs * m / l;
+		}
 		
-		f = new double[length / 2];
-		for (int m = 0; m < length / 2; m++) {
-			f[m] = fs * m / length;
-			System.out.println("f " + f[m]);
+		for (int i = 0; i < f.length; i++) {
+		//	System.out.println("f" + f[i]);
+		}
+		
+		for (int i = 0; i < Y.length; i++) {
+				System.out.println("Y" + Y[i]);
+			}
+		
+		for (int i = 0; i < spectrum1.length; i++) {
+			System.out.println("sp1 " + spectrum1[i]);
+		}
+		
+		for (int i = 0; i < spectrum2.length; i++) {
+			System.out.println("sp2 " + spectrum2[i]);
 		}
 	}
 
@@ -173,11 +166,11 @@ public class FFT {
 		double[] value2 = value;
 		time = value2;
 		value = time2;
-		fft(value);
-		//im = time;
-		//re = value;
-		//time = re;
-		//value = im;
+		// fft(value);
+		// im = time;
+		// re = value;
+		// time = re;
+		// value = im;
 		for (int i = 0; i < time.length; i++) {
 			time[i] = time[i] / (double) n;
 			value[i] = value[i] / (double) n;

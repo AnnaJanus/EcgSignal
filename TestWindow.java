@@ -5,6 +5,7 @@ import java.awt.Dimension;
 import javax.swing.Box;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.border.EmptyBorder;
 
 public class TestWindow extends JFrame {
 
@@ -12,7 +13,7 @@ public class TestWindow extends JFrame {
 
 	public void testWindow() {
 		frame = new JFrame("Test window");
-		frame.setMinimumSize(new Dimension(800, 500));
+		frame.setMinimumSize(new Dimension(400, 200));
 		frame.setLocation(150, 100);
 		frame.setVisible(true);
 
@@ -24,7 +25,7 @@ public class TestWindow extends JFrame {
 		JLabel median;
 		JLabel FFT;
 
-		if (EcgVisualizationSystem.originalCompare != 0) {
+		if (EcgVisualizationSystem.originalCompare != 0d) {
 			original = new JLabel("original: " + EcgVisualizationSystem.originalCompare);
 		} else {
 			original = new JLabel("original: " + "no data");
@@ -47,7 +48,7 @@ public class TestWindow extends JFrame {
 		} else {
 			FFT = new JLabel("FFT: " + "no data");
 		}
-		
+		verticalBox.setBorder(new EmptyBorder(8, 8, 8, 8));
 		verticalBox.add(main);
 		verticalBox.add(Box.createRigidArea(new Dimension(0, 10))); // blank space
 		verticalBox.add(original);
